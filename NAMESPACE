@@ -1,0 +1,16 @@
+exportPattern("^[[:alpha:]]+")
+
+importFrom("graphics", "lines", "plot.default")
+importFrom("stats", "filter", "na.omit", "optimize")
+
+import(ggplot2)
+
+importFrom(magrittr,"%>%")
+export("%>%")
+
+S3method(fitted, ES)
+S3method(forecast_lines, ES)
+S3method(forecast, DES)
+S3method(forecast, SES)
+S3method(plot, ES)
+S3method(residuals, ES)

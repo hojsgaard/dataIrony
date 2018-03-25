@@ -1,0 +1,20 @@
+Package: dataIrony
+Type: Package
+Title: Online Data Smoothing Techniques
+Version: 0.1
+Date: 2018-03-25
+Author: Søren Højsgaard <sorenh@math.aau.dk>
+Maintainer: Søren Højsgaard <sorenh@math.aau.dk> 
+Description: Exponential smoothing and other online smoothing techniques.
+License: GPL (>= 2)
+Encoding: UTF-8
+VignetteBuilder: knitr
+Imports:
+    ggplot2,
+    magrittr
+Suggests:
+    Rgraphviz,
+    microbenchmark,
+    knitr
+RoxygenNote: 6.0.1
+
