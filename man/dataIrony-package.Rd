@@ -1,25 +1,25 @@
-\name{esmooth-package}
-\alias{esmooth-package}
-%%\alias{esmooth}
+\name{dataIrony-package}
+\alias{dataIrony-package}
+%%\alias{dataIrony}
 \docType{package}
 \title{
-\packageTitle{esmooth}
+\packageTitle{dataIrony}
 }
 \description{
-\packageDescription{esmooth}
+\packageDescription{dataIrony}
 }
 \details{
 
 The DESCRIPTION file:
-\packageDESCRIPTION{esmooth}
-\packageIndices{esmooth}
+\packageDESCRIPTION{dataIrony}
+\packageIndices{dataIrony}
 %~~ An overview of how to use the package, including the most important ~~
 %~~ functions ~~
 }
 \author{
-\packageAuthor{esmooth}
+\packageAuthor{dataIrony}
 
-Maintainer: \packageMaintainer{esmooth}
+Maintainer: \packageMaintainer{dataIrony}
 }
 %\references{
 %~~ Literature or other references for background information ~~

@@ -1,5 +1,5 @@
 %\VignetteEngine{knitr::knitr} 
-%\VignetteIndexEntry{esmooth: Exponential smoothing}
+%\VignetteIndexEntry{dataIrony: Exponential smoothing}
 
 \documentclass[11pt]{article}
 
@@ -11,19 +11,19 @@
 
 \def\code#1{\texttt{#1}}
 \def\pkg#1{{\bf #1}}
-\def\esmooth{\pkg{esmooth}}
+\def\di{\pkg{dataIrony}}
 \def\R{\texttt{R}}
 
 <<echo=FALSE>>=
-require(esmooth)
-prettyVersion <- packageDescription("esmooth")$Version
+require(dataIrony)
+prettyVersion <- packageDescription("dataIrony")$Version
 prettyDate <- format(Sys.Date())
 @
 
 
-\title{Exponential smoothing in the \esmooth\ package}
+\title{Exponential smoothing in the \di\ package}
 \author{S{\o}ren H{\o}jsgaard}
-\date{\pkg{esmooth} version \Sexpr{prettyVersion} as of \Sexpr{prettyDate}}
+\date{\pkg{dataIrony} version \Sexpr{prettyVersion} as of \Sexpr{prettyDate}}
 
 \begin{document}
 
