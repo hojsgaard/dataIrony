@@ -1,2 +1,2 @@
-# esmooth
-Exponential smoothing and other online smoothing techniques
+# dataIrony
+Exponential smoothing and other online smoothing techniques (ironing data)
