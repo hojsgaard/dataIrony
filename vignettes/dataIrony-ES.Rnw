@@ -1,0 +1,343 @@
+%\VignetteEngine{knitr::knitr} 
+%\VignetteIndexEntry{dataIrony: Exponential smoothing}
+
+\documentclass[10pt]{article}
+
+%\usepackage[T1]{fontenc}
+%\usepackage[latin1]{inputenc}
+\usepackage{boxedminipage,color,a4wide,url}
+%\usepackage[utf8]{inputenc}
+%\usepackage{inputenx}
+
+\def\code#1{\texttt{#1}}
+\def\pkg#1{{\bf #1}}
+\def\di{\pkg{dataIrony}}
+\def\R{\texttt{R}}
+
+<<echo=FALSE>>=
+require(dataIrony)
+prettyVersion <- packageDescription("dataIrony")$Version
+prettyDate <- format(Sys.Date())
+@
+
+
+\title{Exponential smoothing in the \di\ package}
+\author{S{\o}ren H{\o}jsgaard}
+\date{\pkg{dataIrony} version \Sexpr{prettyVersion} as of \Sexpr{prettyDate}}
+
+\begin{document}
+
+\maketitle
+<<include=FALSE>>=
+library(knitr)
+knit_hooks$set(small.mar = function(before, options, envir) {
+    if (before) par(mar = c(4, 4, .1, .1))  # smaller margin on top and right
+})
+opts_chunk$set(fig.path='fig/graph',tidy=FALSE, 
+               fig.height=2
+)
+@
+
+\def\DS{S^{[2]}}
+
+%\setkeys{Gin}{width=0.6\textwidth}
+
+<<echo=FALSE, warning=FALSE>>=
+dir.create("fig")
+oopt <- options()
+options("digits"=4, "width"=80, "prompt"="R> ", "continue"="  ")
+options(useFancyQuotes="UTF-8")
+@ %def
+
+
+\tableofcontents
+\parindent0pt\parskip5pt
+
+\section{Introduction}
+\label{sec:introduction}
+
+\section{Exponential smoothing}
+\label{sec:expon-smooth}
+
+
+\subsection{Single exponential smoothing}
+\label{sec:ses}
+
+Given is a time series $\{y_1, y_2, \dots, y_T\}$ recorded at
+equidistant time points.  Single exponential smoothing (SES) of
+data results in a new time series $\{S_1, S_2, \dots, S_T\}$:
+\begin{displaymath}
+  S_t = \alpha y_t + (1-\alpha) S_{t-1}, \quad S_1=y_1
+\end{displaymath}
+where $0 < \alpha < 1$.
+
+Given data up to time $t$, the natural forecast $h$ time steps ahead is
+\begin{displaymath}
+  \hat y_{t+h|t} = S_t
+\end{displaymath}
+so the one--step--ahead forecast error is
+$e_t = y_t - \hat y_{t|t-1} = y_t-S_{t-1}$.
+
+Single exponential smoothing works well in the sense of producing
+reasonable predictions if there is no clear trend in data, i.e. if
+$y_t \approx a$ for all $t$.
+
+Notice: An alternative form is:
+\begin{displaymath}
+  S_t = S_{t-1} + \alpha (y_t-S_{t-1}) = S_{t-1} + \alpha e_t
+\end{displaymath}
+
+
+
+\subsection{Double exponential smoothing}
+\label{sec:des}
+
+
+Single exponential smoothing does not work well (when it comes to producing reliable predictions) when there is a trend
+in data, i.e. if $y_t \approx a + b t$.
+Single exponential smoothing will be biased in the sense that
+\begin{displaymath}
+  y_t -S_t = b \frac{\beta}{\alpha} \mbox{ for } t\rightarrow\infty
+  \mbox{ where } \beta=1-\alpha
+\end{displaymath}
+
+Hence $S_t \approx y_t - b \frac{\beta}{\alpha}$ and $y_t \approx S_t
++ b \frac{\beta}{\alpha}$ for large $t$.
+
+If $y_t \approx a + b t$ then $S_t \approx ( a  - b
+\frac{\beta}{\alpha}) + bt = \tilde a + bt$.
+Therefore, if we smooth $S_t$ (i.e.\ smooth data twice) we get (by the same
+argument) that
+\begin{displaymath}
+  S_t - \DS_t \approx b \frac{\beta}{\alpha}
+\mbox{ and }
+  \DS_t = (a - 2b \frac {\beta} \alpha) + bt \mbox{ for } t\rightarrow\infty
+\end{displaymath}
+
+From these considerations we therefore have
+\begin{eqnarray}
+  \label{eq:ses4}
+  b &=& \{ S_t-\DS_t\}\frac\alpha\beta  \\
+  y_t &=& S_t- b\frac{\beta}{\alpha} = S_t+(S_t-\DS_t)=2S_tt-\DS_t
+\end{eqnarray}
+
+Hence natural estimates of levels and slopes become
+\begin{eqnarray}
+  \label{eq:des6}
+    \hat y_t   &=& S_t+\{S_t-\DS_t\}=2S_t-\DS_t\\
+    \hat b_t  &=& \{S_t-\DS_t\}\frac \alpha\beta
+\end{eqnarray}
+
+Similarly, the forecasts become
+\begin{equation}
+  \label{eq:des7}
+  \hat y_{t+h|t} = \hat y_t + \hat b_t h
+\end{equation}
+
+
+\section{Handling non-equidistant measurements}
+\label{sec:handl-non-equid}
+
+First consider equidistant data.  For single exponential smoothing,
+the forecast error is $e_t=y_t-\hat y_{t|t-1}=y_t - S_{t-1}$. Hence
+\begin{displaymath}
+  S_t = S_{t-1} + \alpha e_t
+\end{displaymath}
+Hence, $\alpha$ is the weight attributed to the forecast error for
+recordings that are one time unit apart.
+
+For non--equidistant data we let $t_j$ denote the time of the $j$th
+measurement and we have accordingly
+$S_{t_j} = S_{t_{j-1}} + \alpha e_{t_j}$. Intuition suggests that the
+weight attributed to the forecast error should become smaller when
+$d_j = t_j - t_{j-1}$ becomes larger. Somewhat arbitrarily we handle non--equidistant measurements by
+\begin{displaymath}
+  S_{t_j} = S_{t_{j-1}} + w(\alpha, d_j) e_{t_j}  
+\end{displaymath}
+where the weight $w()$ is given by
+\begin{displaymath}
+  w(\alpha, d) = 1 - (1-\alpha)^{d}
+\end{displaymath}
+
+
+\section{Parameter estimation}
+\label{sec:parameter-estimation}
+
+For single exponential smoothing we note that minimizing
+$\sum (y_t - \hat y_{t|t})^2$ will lead to $\alpha=1$ and $S_t=y_t$ so
+that no smoothing takes place. Since double exponential smoothing is
+simple single exponential smoothing repeated twice the same phenomenon
+will appear for double exponential smoothing.
+
+
+Instead we minimize (by default) the
+one step ahead forecast error $\sum (y_t - \hat y_{t|t-1})^2$.
+
+\section{Example: Nile data}
+\label{example:nile}
+
+<<>>=
+nile <- as.numeric(Nile) # a numeric vector
+head(nile)
+@ %def
+
+Create single and double exponential smoothing objects. When $\alpha$
+is not specified, the parameter is estimated by by minimizing the
+$1$--step forecasting error.
+<< >>= 
+ses1 <- ses(nile)
+des1 <- des(nile)
+ses1
+des1
+@
+
+<<small.mar=T>>=
+plot(nile, cex=.5)
+lines(ses1, col="red")
+lines(des1, col="blue")
+@ %def
+
+
+<<small.mar=T, fig.height=6>>=
+par(mfrow=c(2,1))
+plot(ses1, cex=.3)
+z <- lapply(c(10, 20, 30, 40, 60, 80),
+       function(a)
+           lines(forecast(ses1, at=a, h=1:10), col="blue", lwd=2))
+
+plot(des1, cex=.3)
+z <- lapply(c(10, 20, 30, 40, 60, 80),
+       function(a)
+           lines(forecast(des1, at=a, h=1:10), col="blue", lwd=2))
+@ %def
+
+\section{Example: JohnsonJohnson}
+\label{example:johnson}
+
+This dataset gives the quarterly earnings (dollars) per Johnson \&
+Johnson share in the period 1960-80. On the log--scale, data is approximately linear, see Fig.~\ref{fig:fig00}.
+
+<<fig00, small.mar=T, fig.cap='bla'>>=
+y <- log10(as.numeric(JohnsonJohnson))
+par(mfrow=c(1,2))
+plot(JohnsonJohnson); plot(y, cex=.5)
+@ %def
+
+
+The bias in SES is clear if a small value of $\alpha$ is chosen, whereas DES quickly captures the structure in data, see Fig.~\ref{fig:fig01}.
+
+<<>>=
+ses1 <- ses(y, alpha=.1, fit=FALSE)
+des1 <- des(y, alpha=.1, fit=FALSE)
+ses1
+des1
+@ %def
+
+<<fig01, small.mar=T, fig.cap='bla', echo=FALSE>>= 
+par(mfrow=c(1,2))
+plot(y, cex=.5); 
+lines(ses1, xlab='', col="red") 
+plot(y, cex=.5); 
+lines(des1, xlab='', col="red") 
+@
+
+When fitting $\alpha$ to data, the smoothed values fit better to data,
+but the predictions of SES are bad because of the linear trend in
+data, cfr.\ Fig.~\ref{fig:fig02}.
+
+<<>>=
+ses1 <- ses(y)
+des1 <- des(y)
+ses1
+des1
+@ %def
+
+<<fig02, small.mar=T, fig.cap='bla', echo=FALSE>>=
+par(mfrow=c(1,2))
+plot(ses1, cex=.5)
+z <- lapply(c(10, 20, 30, 40, 60, 80),
+       function(a)
+           lines(forecast(ses1, at=a, h=1:10), col="blue", lwd=2))
+plot(des1, cex=.5)
+z <- lapply(c(10, 20, 30, 40, 60, 80),
+       function(a)
+           lines(forecast(des1, at=a, h=1:10), col="blue", lwd=2))
+@ %def
+
+
+
+%% \section{Example: Seatbelts}
+%% \label{sec:seatbelts}
+
+%% <<>>=
+%% sb <- as.data.frame(Seatbelts)
+%% head(sb)
+%% y <- sb$DriversKilled
+%% plot(y)
+%% @ 
+
+%% <<small.mar=T>>=
+%% ses1 <- ses(y)
+%% ses1
+%% par(mfrow=c(1,2))
+%% plot(y, cex=.5); 
+%% lines(ses1, xlab='', col="red") 
+%% plot(residuals(ses1), cex=.5); abline(h=0)
+%% @ %def
+
+
+
+
+
+
+
+
+%% \section{Example}
+%% \label{sec:example}
+
+%% << >>= 
+
+%% yvar <- aggregate(co2)
+%% tvar <- seq_along(yvar)
+%% f1 <- ses(yvar, tvar)
+%% f2 <- des(yvar, tvar)
+%% at <- 1 + seq(0, 35, by=5)
+
+%% plot(f1)
+%% forecast_lines(f1, at=at, ahead=0:5, col='red', lwd=3)
+%% forecast_lines(f2, at=at, ahead=0:5, col='blue', lwd=3)
+
+%% @
+
+
+
+%% Add more noise to data: 
+%% << >>= 
+%% yvar2 <- yvar + rnorm(length(yvar), sd=40)
+%% f1 <- ses(yvar2, tvar)
+%% f2 <- des(yvar2, tvar)
+
+%% plot(f1)
+%% at <- 1 + seq(0, 35, by=5)
+%% forecast_lines(f1, at=at, ahead=0:5, col='red', lwd=3)
+%% forecast_lines(f2, at=at, ahead=0:5, col='blue', lwd=3)
+%%@
+
+
+
+
+
+
+
+
+
+
+<<echo=FALSE>>=
+#rm(print.list)
+options("width"=85)
+@ %def
+
+
+\end{document}
+
+

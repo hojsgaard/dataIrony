@@ -11,6 +11,7 @@
 #'     by minimizing a prediction error.
 #' @param init Intial value for the first smoothed value; defaults to
 #'     the average of the first three observations.
+#' @param fit Should smoothing parameter be fitted to data?
 #' @param filter. Experimental feature, please do not use.
 #'
 #' @examples
@@ -39,40 +40,41 @@
 #' 
 
 #' @rdname esmooth
-ses <- function(yvar, tvar=NULL, alpha=NULL, init=NULL, filter.=NULL){
-    .SES(yvar, tvar, alpha, init, filter.)
+ses <- function(yvar, tvar=NULL, alpha=NULL, init=NULL, fit=TRUE, n.ahead=1, filter.=NULL){
+    obj <- .SES(yvar, tvar, alpha, init, filter.)
+    if (!fit) obj
+    else update(obj, alpha=es_fit(obj, n.ahead=n.ahead))
 }
 
 #' @rdname esmooth
-des <- function(yvar, tvar=NULL, alpha=NULL, init=NULL, filter.=NULL){
-    .DES(yvar, tvar, alpha, init, filter.)
+des <- function(yvar, tvar=NULL, alpha=NULL, init=NULL, fit=TRUE, n.ahead=1, filter.=NULL){
+    obj <- .DES(yvar, tvar, alpha, init, filter.)
+    if (!fit) obj
+    else update(obj, alpha=es_fit(obj, n.ahead=n.ahead))    
 }
 
-.SES <- function(yvar, tvar=NULL, alpha=NULL, init=NULL, filter.=NULL){
 
+.SES <- function(yvar, tvar=NULL, alpha=NULL, init=NULL, filter.=NULL){
+    
     if (is.null(tvar)) tvar <- seq_along(yvar)
-    if (is.null(alpha)) alpha <- .getalpha(yvar, tvar, FUN=.SES, n.ahead=5)
+    if (is.null(alpha)) alpha <- .5 ##.getalpha(yvar, tvar, n.ahead=1, FUN.=.SES)
     
     na.y  <- is.na(yvar)
-    ##cat(sprintf("Missing values=%i; first missing value=%i\n", sum(na.y), which(na.y)[1]))
     tvar2 <- tvar[!na.y]
     yvar2 <- yvar[!na.y]
     
-    ##wgt2  <- .seswgt(alpha, tvar2)
     alpha <- c(alpha, alpha)[1:2]
     wgt2  <- do.call(cbind, lapply(alpha, .seswgt, tvar2)) ## Now wgt2 is n x 2 matrix
     
     if (is.null(init))
         init <- mean(na.omit(yvar2)[1:3])
-    
+
     S1    <- .ses.core(yvar2, wgt2, init=init)
-    y.fit <- rep(NA,length(yvar))
+    y.fit <- rep(NA, length(yvar))
     y.fit[!na.y] <- S1
     
-    if(is.na(y.fit[1])){
-        y.fit[1] <- init
-    }
-    
+    if (is.na(y.fit[1])) y.fit[1] <- init
+        
     ## Forecast missing for ses; Kræver y.fit
     for (ii in 2:length(y.fit)){
         if (is.na(y.fit[ii])){
@@ -85,32 +87,32 @@ des <- function(yvar, tvar=NULL, alpha=NULL, init=NULL, filter.=NULL){
         y.fit   <- as.numeric(filter(y.fit, filter., sides=1))
     }
     
-    ans <- list(x=tvar, y=y.fit, y.obs=yvar, init=init, alpha=alpha[1])
+    ans <- list(x=tvar, y=y.fit, y.obs=yvar, init=init, alpha=alpha[1], cls=".SES")
     class(ans) <- c("SES", "ES", "list")
     ans
 }
 
+
 .DES <- function(yvar, tvar=NULL, alpha=NULL, init=NULL, filter.=NULL){
 
     if (is.null(tvar)) tvar <- seq_along(yvar)
-    if (is.null(alpha)) alpha <- .getalpha(yvar, tvar, FUN=.DES, n.ahead=1)
+    if (is.null(alpha)) alpha <- .5 ## .getalpha(yvar, tvar, n.ahead=1, FUN.=.DES)
     
     na.y  <- is.na(yvar)
-    ## cat(sprintf("Missing values=%i; first missing value=%i\n", sum(na.y), which(na.y)[1]))
     tvar2 <- tvar[!na.y]
     yvar2 <- yvar[!na.y]
     
-    ##wgt2  <- .seswgt(alpha, tvar2)
     alpha <- c(alpha, alpha)[1:2]
     wgt2  <- do.call(cbind, lapply(alpha, .seswgt, tvar2)) ## Now wgt2 is n x 2 matrix
     
     if (is.null(init))
         init <- mean(na.omit(yvar2)[1:3])
+
+
     
     S1  <- .ses.core(yvar2, wgt2, init=init)
-    S2  <- .ses.core(S1, wgt2, init=S1[1])
-    
-    xx2 <- 2*S1 - S2
+    S2  <- .ses.core(S1, wgt2, init=S1[1])    
+    xx2 <- 2 * S1 - S2
     
     ##bb2 <- (S1 - S2)*wgt2/(1-wgt2)
     ## SHD: Tricky when wgt2 is vector valued; this is certainly a hack
@@ -149,23 +151,9 @@ des <- function(yvar, tvar=NULL, alpha=NULL, init=NULL, filter.=NULL){
         y.fit <- as.numeric(filter(y.fit, filter., sides=1))
     }
     
-    ans <- list(x=tvar, y=y.fit, y.obs=yvar, xx=xx, bb=bb, init=init, alpha=alpha[1])
+    ans <- list(x=tvar, y=y.fit, y.obs=yvar, xx=xx, bb=bb, init=init, alpha=alpha[1], cls=".DES")
     class(ans) <- c("DES", "ES", "list")
     ans
-}
-
-
-residuals.ES <- function(object,...){
-    object$y.obs - object$y
-}
-
-fitted.ES <- function(object,...){
-    object$y
-}
-
-plot.ES <- function(x, ...){
-    plot.default(x$x, x$y.obs)
-    lines(x$x, x$y, col='red', lwd=2, ...)
 }
 
 .ses.core <- function(yvar2, wgt, init=0){
@@ -185,18 +173,46 @@ plot.ES <- function(x, ...){
     ans
 }
 
-## FIXME: n.ahead virker da ikke
-.getalpha <- function(yvar, tvar=seq_along(yvar), FUN=.SES, n.ahead=1){
-    ff <- function(alpha, yvar, tvar, n.ahead=1){
-        ss <- FUN(yvar, tvar, alpha=alpha)
-        .forecasterror(ss)
+.getalpha <- function(yvar, tvar=seq_along(yvar), n.ahead=1, FUN.){
+
+    ff <- function(alpha, yvar, tvar, n.ahead){
+        es <- do.call(FUN., list(yvar, tvar, alpha=alpha))
+        #print(es)
+        .forecasterror(es, n.ahead)
     }
     aa <- optimize(ff, interval=c(0, 1), yvar=yvar, tvar=tvar, n.ahead=n.ahead)$minimum
     aa
 }
 
-.forecasterror <- function(object){
-  if (inherits(object, "DES")){
+.fit_es <- function(es, n.ahead=1){
+    .getalpha(es$y.obs, es$tvar, n.ahead=n.ahead, FUN.=es$cls)
+}
+
+.vv <- Vectorize(.fit_es, vectorize.args="n.ahead")
+
+#' @title Fit exponential smoothing object.
+#'
+#' @description Fit exponential smoothing object by minimizing the squared \code{n.ahead} steps prediction error.
+#'
+#' @name es_fit
+#'
+#' @param object Exponential smoothing object
+#' @param n.ahead Number of steps ahead used in fitting.
+#'
+es_fit <- function(object, n.ahead=1){
+    .vv(object, n.ahead)
+}
+
+
+
+
+##fit_alpha <- Vectorize(.getalpha, vectorize.args="n.ahead")
+
+.forecasterror <- function(object, n.ahead=1){
+    UseMethod(".forecasterror")
+}
+
+.forecasterror.DES <- function(object, n.ahead=1){
     yvar <- object$y.obs
     tvar <- object$x
     na.y  <- is.na(yvar)
@@ -207,18 +223,34 @@ plot.ES <- function(x, ...){
     n2  <- length(dtvar2)
     xx2 <- object$xx[!na.y]
     bb2 <- object$bb[!na.y]
-    
-    fe <- yvar2 - c(NA, xx2[1:n2] + bb2[1:n2] * dtvar2)
+
+    f <- xx2[1:n2] + bb2[1:n2] * dtvar2
+    ##fe <- yvar2 - c(NA, f)
+    ## str(list(length(yvar2), length(f), n.ahead,
+    ##          length(f[1:(1 + length(f) - n.ahead)])
+    ##          ))
+    fe <- yvar2 - c(rep(NA, n.ahead), f[1:(1 + length(f) - n.ahead)])
+
     sum(fe^2, na.rm=T) / sum(!is.na(fe))
-  } else {
-    if (inherits(object, "SES")) {
-      fe <- object$y.obs - c(NA, object$y[1:(length(object$x) - 1)])
-      sum(fe^2, na.rm=T) / sum(!is.na(fe))      
-    } else {
-      stop()
-    }
-  }
 }
+
+.forecasterror.SES <- function(object, n.ahead=1){
+    
+    ##fe <- object$y.obs - c(NA, object$y[1:(length(object$x) - 1)])
+    fe <- object$y.obs - c(rep(NA, n.ahead), object$y[1:(length(object$x) - n.ahead)])
+    sum(fe^2, na.rm=T) / sum(!is.na(fe))      
+}
+
+
+
+
+update.ES <- function(object, alpha, ...){
+    do.call(object$cls,
+            list(yvar=object$y.obs, tvar=object$x,
+                 init=object$init, alpha=alpha))
+}
+
+
 
 
 #' @title Forecast for exponential smoothing
@@ -253,13 +285,17 @@ forecast.DES <- function(object, at=NULL, h=NULL){
     x <- object$x
     if (is.null(at)) at <- x[length(x)]
     if (is.null(h)) h <- c(0, 1)
-        
+    
     i <- max(which(x <= at))
     fr.t <- x[i]
-
+    
     yp <- object$xx[i] + object$bb[i] * h
     list(x=at + h, y=yp)
 }
+
+
+
+
 
 
 
@@ -278,6 +314,22 @@ forecast_lines.ES <- function(object, at=NULL, h=NULL, ...){
 
 
 
+residuals.ES <- function(object,...){
+    object$y.obs - object$y
+}
+
+fitted.ES <- function(object,...){
+    object$y
+}
+
+plot.ES <- function(x, ...){
+    plot.default(x$x, x$y.obs, ...)
+    lines(x$x, x$y, col='red', ...)
+}
+
+print.ES <- function(x, ...){
+    str(x[c("cls", "alpha")])
+}
 
 
 

@@ -6,9 +6,11 @@
 \alias{des}
 \title{Exponential smoothing}
 \usage{
-ses(yvar, tvar = NULL, alpha = NULL, init = NULL, filter. = NULL)
+ses(yvar, tvar = NULL, alpha = NULL, init = NULL, fit = TRUE,
+  filter. = NULL)
 
-des(yvar, tvar = NULL, alpha = NULL, init = NULL, filter. = NULL)
+des(yvar, tvar = NULL, alpha = NULL, init = NULL, fit = TRUE,
+  filter. = NULL)
 }
 \arguments{
 \item{yvar}{Time series, a numeric vector.}
@@ -20,6 +22,8 @@ by minimizing a prediction error.}
 
 \item{init}{Intial value for the first smoothed value; defaults to
 the average of the first three observations.}
+
+\item{fit}{Should smoothing parameter be fitted to data?}
 
 \item{filter.}{Experimental feature, please do not use.}
 }

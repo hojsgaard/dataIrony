@@ -2,6 +2,8 @@ exportPattern("^[[:alpha:]]+")
 
 importFrom("graphics", "lines", "plot.default")
 importFrom("stats", "filter", "na.omit", "optimize")
+importFrom("utils", "str")
+importFrom("stats", "update")
 
 import(ggplot2)
 
