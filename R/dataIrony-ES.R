@@ -328,7 +328,8 @@ plot.ES <- function(x, ...){
 }
 
 print.ES <- function(x, ...){
-    str(x[c("cls", "alpha")])
+    cat(sprintf("Exponential smoothing (%s); alpha=%f\n", x["cls"], x["alpha"]))
+    ##str(x[c("cls", "alpha")])
 }
 
 

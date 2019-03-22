@@ -3,11 +3,13 @@
 
 \documentclass[10pt]{article}
 
-%\usepackage[T1]{fontenc}
+\usepackage[T1]{fontenc}
 %\usepackage[latin1]{inputenc}
 \usepackage{boxedminipage,color,a4wide,url}
-%\usepackage[utf8]{inputenc}
+\usepackage[utf8]{inputenc}
 %\usepackage{inputenx}
+
+\usepackage{natbib}
 
 \def\code#1{\texttt{#1}}
 \def\pkg#1{{\bf #1}}
@@ -20,12 +22,12 @@ prettyVersion <- packageDescription("dataIrony")$Version
 prettyDate <- format(Sys.Date())
 @
 
-
 \title{Exponential smoothing in the \di\ package}
 \author{S{\o}ren H{\o}jsgaard}
 \date{\pkg{dataIrony} version \Sexpr{prettyVersion} as of \Sexpr{prettyDate}}
 
 \begin{document}
+\include{paper}
 
 \maketitle
 <<include=FALSE>>=
@@ -34,7 +36,7 @@ knit_hooks$set(small.mar = function(before, options, envir) {
     if (before) par(mar = c(4, 4, .1, .1))  # smaller margin on top and right
 })
 opts_chunk$set(fig.path='fig/graph',tidy=FALSE, 
-               fig.height=2
+               fig.height=4
 )
 @
 
@@ -55,6 +57,15 @@ options(useFancyQuotes="UTF-8")
 
 \section{Introduction}
 \label{sec:introduction}
+
+\cite{brown:1963} describes exponential smoothing of polynomials
+obtained by repeated application of simple exponential smoothing
+applied repeatedly. This note describes this approach and its
+implementation in \R. The approach has been used e.g.\ 
+\cite{thorup:etal:2013} in connection with online estimation of live body
+weight for dairy cattle.
+
+
 
 \section{Exponential smoothing}
 \label{sec:expon-smooth}
@@ -91,7 +102,6 @@ Notice: An alternative form is:
 
 \subsection{Double exponential smoothing}
 \label{sec:des}
-
 
 Single exponential smoothing does not work well (when it comes to producing reliable predictions) when there is a trend
 in data, i.e. if $y_t \approx a + b t$.
@@ -135,6 +145,14 @@ Similarly, the forecasts become
 \end{equation}
 
 
+\subsection{Triple exponential smoothing}
+\label{sec:triple-expon-smooth}
+
+
+
+
+
+
 \section{Handling non-equidistant measurements}
 \label{sec:handl-non-equid}
 
@@ -173,6 +191,51 @@ will appear for double exponential smoothing.
 Instead we minimize (by default) the
 one step ahead forecast error $\sum (y_t - \hat y_{t|t-1})^2$.
 
+
+\section{Simulated data}
+\label{sec:simulated-data}
+
+<<fig.height=6>>= 
+par(mfrow=c(2,2))
+N <- 100
+tvar <- sort(runif(N, 1, 100))
+e1 <- rnorm(N)
+yvar1 <- 10 + e1 
+yvar2 <- 19 + 0.04 * tvar + e1 
+yvar3 <- 10 + 0.4 * tvar - 0.004 * tvar^2 + e1
+
+se1  <- ses(yvar1, tvar)
+se1
+plot(se1, cex=.5)
+forecast_lines(se1, at=40, h=1:20, col="blue")
+se2  <- ses(yvar2, tvar)
+se2
+plot(se2, cex=.5)
+forecast_lines(se2, at=40, h=1:20, col="blue")
+
+de1  <- des(yvar1, tvar)
+de1
+plot(de1, cex=.5)
+forecast_lines(de1, at=40, h=1:20, col="blue")
+de2  <- des(yvar2, tvar)
+de2
+plot(de2, cex=.5)
+forecast_lines(de2, at=40, h=1:20, col="blue")
+@
+
+
+<< >>= 
+par(mfrow=c(1,2))
+
+se1  <- ses(yvar3, tvar, alpha=.1, fit=FALSE)
+se1
+plot(se1)
+de3  <- des(yvar3, tvar, alpha=.1, fit=FALSE)
+de3
+plot(de3)
+@
+
+
 \section{Example: Nile data}
 \label{example:nile}
 
@@ -191,7 +254,7 @@ ses1
 des1
 @
 
-<<small.mar=T>>=
+<<small.mar=T, fig.cap="....">>=
 plot(nile, cex=.5)
 lines(ses1, col="red")
 lines(des1, col="blue")
@@ -266,6 +329,30 @@ z <- lapply(c(10, 20, 30, 40, 60, 80),
 
 
 
+
+\bibliographystyle{apalike}
+\bibliography{paper}
+
+
+<<echo=FALSE>>=
+#rm(print.list)
+options("width"=85)
+@ %def
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
 %% \section{Example: Seatbelts}
 %% \label{sec:seatbelts}
 
@@ -327,17 +414,5 @@ z <- lapply(c(10, 20, 30, 40, 60, 80),
 
 
 
-
-
-
-
-
-<<echo=FALSE>>=
-#rm(print.list)
-options("width"=85)
-@ %def
-
-
-\end{document}
 
 
