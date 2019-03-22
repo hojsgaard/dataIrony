@@ -1,0 +1,15 @@
+\begin{thebibliography}{}
+
+\bibitem[Brown, 1963]{brown:1963}
+Brown, R.~G. (1963).
+\newblock {\em Smoothing, forecasting and prediction of discrete time series}.
+\newblock Prentice-Hall International.
+
+\bibitem[Thorup et~al., 2013]{thorup:etal:2013}
+Thorup, V.~M., Højsgaard, S., Weisbjerg, M.~R., and Friggens, N.~C. (2013).
+\newblock {Energy balance of individual cows can be estimated in real-time on
+  farm using frequent liveweight measures even in the absence of body condition
+  score}.
+\newblock {\em Animal}, 7(10):1631--1639.
+
+\end{thebibliography}

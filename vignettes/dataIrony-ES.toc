@@ -1,0 +1,10 @@
+\contentsline {section}{\numberline {1}Introduction}{1}
+\contentsline {section}{\numberline {2}Exponential smoothing}{1}
+\contentsline {subsection}{\numberline {2.1}Single exponential smoothing}{1}
+\contentsline {subsection}{\numberline {2.2}Double exponential smoothing}{2}
+\contentsline {subsection}{\numberline {2.3}Triple exponential smoothing}{2}
+\contentsline {section}{\numberline {3}Handling non-equidistant measurements}{2}
+\contentsline {section}{\numberline {4}Parameter estimation}{3}
+\contentsline {section}{\numberline {5}Simulated data}{3}
+\contentsline {section}{\numberline {6}Example: Nile data}{5}
+\contentsline {section}{\numberline {7}Example: JohnsonJohnson}{7}
